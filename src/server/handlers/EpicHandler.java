@@ -1,6 +1,8 @@
-package servers.handlers;
+package server.handlers;
 
+import adapters.InstantAdapter;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -11,9 +13,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 public class EpicHandler implements HttpHandler {
-    private static final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).create();
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     private final TaskManager taskManager;
 
@@ -33,7 +36,9 @@ public class EpicHandler implements HttpHandler {
                 String query = exchange.getRequestURI().getQuery();
                 if (query == null) {
                     statusCode = 200;
-                    response = gson.toJson(taskManager.getAllEpics());
+                    String jsonString = gson.toJson(taskManager.getAllEpics());
+                    System.out.println("GET EPICS: " + jsonString);
+                    response = gson.toJson(jsonString);
                 } else {
                     try {
                         int id = Integer.parseInt(query.substring(query.indexOf("id=") + 3));
@@ -57,26 +62,22 @@ public class EpicHandler implements HttpHandler {
                 String bodyRequest = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 try {
                     Epic epic = gson.fromJson(bodyRequest, Epic.class);
-                    if (epic.getSubtaskIds() == null) {
-                        statusCode = 400;
-                        response = "Для Эпика требуется передать параметр subtasks";
-                    }
-                    else {
-                        int id = epic.getId();
-                        if (taskManager.getEpicById(id) != null) {
-                            taskManager.updateTask(epic);
-                            statusCode = 200;
-                            response = "Эпик с id=" + id + " обновлен";
-                        } else {
-                            Epic epicCreated = taskManager.createEpic(epic);
-                            int idCreated = epicCreated.getId();
-                            statusCode = 201;
-                            response = "Создан эпик с id=" + idCreated;
-                        }
+                    int id = epic.getId();
+                    if (taskManager.getEpicById(id) != null) {
+                        taskManager.updateTask(epic);
+                        statusCode = 200;
+                        response = "Эпик с id=" + id + " обновлен";
+                    } else {
+                        System.out.println("CREATED");
+                        Epic epicCreated = taskManager.createEpic(epic);
+                        System.out.println("CREATED EPIC: " + epicCreated);
+                        int idCreated = epicCreated.getId();
+                        statusCode = 201;
+                        response = "Создан эпик с id=" + idCreated;
                     }
                 } catch (JsonSyntaxException e) {
-                    response = "Неверный формат запроса";
                     statusCode = 400;
+                    response = "Неверный формат запроса";
                 }
                 break;
             case "DELETE":
@@ -84,12 +85,12 @@ public class EpicHandler implements HttpHandler {
                 query = exchange.getRequestURI().getQuery();
                 if (query == null) {
                     taskManager.deleteAllEpics();
-                    statusCode = 204;
+                    statusCode = 200;
                 } else {
                     try {
                         int id = Integer.parseInt(query.substring(query.indexOf("id=") + 3));
                         taskManager.deleteEpicById(id);
-                        statusCode = 204;
+                        statusCode = 200;
                     } catch (StringIndexOutOfBoundsException e) {
                         statusCode = 400;
                         response = "В запросе отсутствует необходимый параметр id";

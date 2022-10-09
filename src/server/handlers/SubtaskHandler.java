@@ -1,6 +1,8 @@
-package servers.handlers;
+package server.handlers;
 
+import adapters.InstantAdapter;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -11,9 +13,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 public class SubtaskHandler implements HttpHandler {
-    private static final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).create();
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     private final TaskManager taskManager;
 
@@ -64,7 +67,9 @@ public class SubtaskHandler implements HttpHandler {
                         response = "Подзадача с id=" + id + " обновлена";
                     }
                     else {
+                        System.out.println("CREATED");
                         Subtask subtaskCreated = taskManager.createSubtask(subtask);
+                        System.out.println("CREATED SUBTASK: " + subtaskCreated);
                         int idCreated = subtaskCreated.getId();
                         statusCode = 201;
                         response = "Создана подзадача с id=" + idCreated;
@@ -79,12 +84,12 @@ public class SubtaskHandler implements HttpHandler {
                 query = exchange.getRequestURI().getQuery();
                 if (query == null) {
                     taskManager.deleteAllSubtasks();
-                    statusCode = 204;
+                    statusCode = 200;
                 } else {
                     try {
                         int id = Integer.parseInt(query.substring(query.indexOf("id=") + 3));
                         taskManager.deleteSubtaskById(id);
-                        statusCode = 204;
+                        statusCode = 200;
                     } catch (StringIndexOutOfBoundsException e) {
                         statusCode = 400;
                         response = "В запросе отсутствует необходимый параметр id";

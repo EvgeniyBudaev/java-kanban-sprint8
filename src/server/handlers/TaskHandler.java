@@ -1,4 +1,4 @@
-package servers.handlers;
+package server.handlers;
 
 import adapters.InstantAdapter;
 import com.google.gson.Gson;
@@ -38,10 +38,9 @@ public class TaskHandler implements HttpHandler {
                 String query = httpExchange.getRequestURI().getQuery();
                 if (query == null) {
                     statusCode = 200;
-                    System.out.println("TASKS: " + taskManager.getAllTasks());
                     String jsonString = gson.toJson(taskManager.getAllTasks());
-                    System.out.println("RESPONSE: " + jsonString);
-                    response = gson.toJson(taskManager.getAllTasks());
+                    System.out.println("GET TASKS: " + jsonString);
+                    response = gson.toJson(jsonString);
                 } else {
                     try {
                         int id = Integer.parseInt(query.substring(query.indexOf("id=") + 3));
@@ -62,8 +61,7 @@ public class TaskHandler implements HttpHandler {
                 }
                 break;
             case "POST":
-                String bodyRequest = new String(
-                        httpExchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                String bodyRequest = new String(httpExchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                 try {
                     Task task = gson.fromJson(bodyRequest, Task.class);
                     int id = task.getId();
@@ -71,9 +69,9 @@ public class TaskHandler implements HttpHandler {
                         taskManager.updateTask(task);
                         statusCode = 201;
                         response = "Задача с id=" + id + " обновлена";
-                    }
-                    else {
+                    } else {
                         Task taskCreated = taskManager.createTask(task);
+                        System.out.println("CREATED TASK: " + taskCreated);
                         int idCreated = taskCreated.getId();
                         statusCode = 201;
                         response = "Создана задача с id=" + idCreated;
@@ -88,12 +86,12 @@ public class TaskHandler implements HttpHandler {
                 query = httpExchange.getRequestURI().getQuery();
                 if (query == null) {
                     taskManager.deleteAllTasks();
-                    statusCode = 204;
+                    statusCode = 200;
                 } else {
                     try {
                         int id = Integer.parseInt(query.substring(query.indexOf("id=") + 3));
                         taskManager.deleteTaskById(id);
-                        statusCode = 204;
+                        statusCode = 200;
                     } catch (StringIndexOutOfBoundsException e) {
                         statusCode = 400;
                         response = "В запросе отсутствует необходимый параметр id";

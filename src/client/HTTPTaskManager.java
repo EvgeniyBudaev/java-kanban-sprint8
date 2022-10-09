@@ -1,4 +1,4 @@
-package servers;
+package client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -11,6 +11,8 @@ import tasks.Subtask;
 import tasks.Task;
 
 import java.io.IOException;
+import java.net.URI;
+
 
 public class HTTPTaskManager extends FileBackedTasksManager {
 
@@ -18,17 +20,13 @@ public class HTTPTaskManager extends FileBackedTasksManager {
     final static String KEY_SUBTASKS = "subtasks";
     final static String KEY_EPICS = "epics";
     final static String KEY_HISTORY = "history";
-    final static String KEY_NEXT_ID = "nextId";
     final KVTaskClient client;
-    int nextId;
 
     public HTTPTaskManager(HistoryManager historyManager, String path) throws IOException, InterruptedException {
         super(historyManager);
-        client = new KVTaskClient(path);
+        URI url = URI.create(path);
+        client = new KVTaskClient(url);
         Gson gson = new Gson();
-
-        JsonElement jsonNextId = JsonParser.parseString(client.load(KEY_NEXT_ID));
-        nextId = jsonNextId.getAsInt();
 
         JsonElement jsonTasks = JsonParser.parseString(client.load(KEY_TASKS));
         JsonArray jsonTasksArray = jsonTasks.getAsJsonArray();
@@ -68,7 +66,6 @@ public class HTTPTaskManager extends FileBackedTasksManager {
     @Override
     public void save() {
         Gson gson = new Gson();
-        client.put(KEY_NEXT_ID, gson.toJson(nextId));
         client.put(KEY_TASKS, gson.toJson(tasks));
         client.put(KEY_SUBTASKS, gson.toJson(subtasks));
         client.put(KEY_EPICS, gson.toJson(epics));

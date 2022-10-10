@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
-    private static int id = 0;
+    protected static int id = 0;
 
     protected final Map<Integer, Task> tasks = new HashMap<>();
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
@@ -423,5 +423,15 @@ public class InMemoryTaskManager implements TaskManager {
 
     private List<Task> getPrioritizedTasks() {
         return prioritizedTasks.stream().toList();
+    }
+
+    @Override
+    public String toString() {
+        return "Manager{" +
+                "tasks=" + tasks +
+                ", subtasks=" + subtasks +
+                ", epics=" + epics +
+                ", historyManager=" + historyManager.getHistory() +
+                '}';
     }
 }

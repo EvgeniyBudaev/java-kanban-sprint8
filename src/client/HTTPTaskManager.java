@@ -1,9 +1,7 @@
 package client;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import adapters.InstantAdapter;
+import com.google.gson.*;
 import manager.FileBackedTasksManager;
 import manager.HistoryManager;
 import tasks.Epic;
@@ -11,8 +9,8 @@ import tasks.Subtask;
 import tasks.Task;
 
 import java.io.IOException;
-import java.net.URI;
-
+import java.time.Instant;
+import java.util.stream.Collectors;
 
 public class HTTPTaskManager extends FileBackedTasksManager {
 
@@ -21,54 +19,65 @@ public class HTTPTaskManager extends FileBackedTasksManager {
     final static String KEY_EPICS = "epics";
     final static String KEY_HISTORY = "history";
     final KVTaskClient client;
+    private static final Gson gson =
+            new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).create();
 
     public HTTPTaskManager(HistoryManager historyManager, String path) throws IOException, InterruptedException {
         super(historyManager);
-        URI url = URI.create(path);
-        client = new KVTaskClient(url);
-        Gson gson = new Gson();
+        client = new KVTaskClient(path);
 
         JsonElement jsonTasks = JsonParser.parseString(client.load(KEY_TASKS));
-        JsonArray jsonTasksArray = jsonTasks.getAsJsonArray();
-        for (JsonElement jsonTask : jsonTasksArray) {
-            Task task = gson.fromJson(jsonTask, Task.class);
-            this.addTask(task);
-        }
-
-        JsonElement jsonSubtasks = JsonParser.parseString(client.load(KEY_SUBTASKS));
-        JsonArray jsonSubtasksArray = jsonSubtasks.getAsJsonArray();
-        for (JsonElement jsonSubtask : jsonSubtasksArray) {
-            Subtask subtask = gson.fromJson(jsonSubtask, Subtask.class);
-            this.addSubtask(subtask);
+        if (!jsonTasks.isJsonNull()) {
+            JsonArray jsonTasksArray = jsonTasks.getAsJsonArray();
+            for (JsonElement jsonTask : jsonTasksArray) {
+                Task task = gson.fromJson(jsonTask, Task.class);
+                this.addTask(task);
+            }
         }
 
         JsonElement jsonEpics = JsonParser.parseString(client.load(KEY_EPICS));
-        JsonArray jsonEpicsArray = jsonEpics.getAsJsonArray();
-        for (JsonElement jsonEpic : jsonEpicsArray) {
-            Epic epic = gson.fromJson(jsonEpic, Epic.class);
-            this.addEpic(epic);
+        if (!jsonEpics.isJsonNull()) {
+            JsonArray jsonEpicsArray = jsonEpics.getAsJsonArray();
+            for (JsonElement jsonEpic : jsonEpicsArray) {
+                Epic task = gson.fromJson(jsonEpic, Epic.class);
+                this.addEpic(task);
+            }
+        }
+
+        JsonElement jsonSubtasks = JsonParser.parseString(client.load(KEY_SUBTASKS));
+        if (!jsonSubtasks.isJsonNull()) {
+            JsonArray jsonSubtasksArray = jsonSubtasks.getAsJsonArray();
+            for (JsonElement jsonSubtask : jsonSubtasksArray) {
+                Subtask task = gson.fromJson(jsonSubtask, Subtask.class);
+                this.addSubtask(task);
+            }
         }
 
         JsonElement jsonHistoryList = JsonParser.parseString(client.load(KEY_HISTORY));
-        JsonArray jsonHistoryArray = jsonHistoryList.getAsJsonArray();
-        for (JsonElement jsonTaskId : jsonHistoryArray) {
-            int taskId = jsonTaskId.getAsInt();
-            if (this.subtasks.containsKey(taskId)) {
-                this.getSubtaskById(taskId);
-            } else if (this.epics.containsKey(taskId)) {
-                this.getEpicById(taskId);
-            } else if (this.tasks.containsKey(taskId)) {
-                this.getTaskById(taskId);
+        if (!jsonHistoryList.isJsonNull()) {
+            JsonArray jsonHistoryArray = jsonHistoryList.getAsJsonArray();
+            for (JsonElement jsonTaskId : jsonHistoryArray) {
+                int taskId = jsonTaskId.getAsInt();
+                if (this.subtasks.containsKey(taskId)) {
+                    this.getSubtaskById(taskId);
+                } else if (this.epics.containsKey(taskId)) {
+                    this.getEpicById(taskId);
+                } else if (this.tasks.containsKey(taskId)) {
+                    this.getTaskById(taskId);
+                }
             }
         }
     }
 
     @Override
     public void save() {
-        Gson gson = new Gson();
-        client.put(KEY_TASKS, gson.toJson(tasks));
-        client.put(KEY_SUBTASKS, gson.toJson(subtasks));
-        client.put(KEY_EPICS, gson.toJson(epics));
-        client.put(KEY_HISTORY, gson.toJson(FileBackedTasksManager.historyToString(this.getHistoryManager())));
+        client.put(KEY_TASKS, gson.toJson(tasks.values()));
+        client.put(KEY_SUBTASKS, gson.toJson(subtasks.values()));
+        client.put(KEY_EPICS, gson.toJson(epics.values()));
+        client.put(KEY_HISTORY, gson.toJson(this.getHistory()
+                .stream()
+                .map(Task::getId)
+                .collect(Collectors.toList())));
     }
+
 }

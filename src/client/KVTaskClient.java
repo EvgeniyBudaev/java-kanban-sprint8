@@ -1,7 +1,5 @@
 package client;
 
-import exception.HandlerRequestException;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -10,76 +8,71 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 public class KVTaskClient {
-    private final URI uri;
+
     private final String apiToken;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    public KVTaskClient(URI kvServerUri) {
-        this.uri = kvServerUri;
-        apiToken = register(uri);
-    }
+    private final String serverURL;
 
-    private String register(URI serverUri) {
-        try {
-            URI registerUrl = URI.create(serverUri + "register");
+    public KVTaskClient(String serverURL) throws IOException, InterruptedException {
+        this.serverURL = serverURL;
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(registerUrl)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .build();
-            HttpResponse.BodyHandler<String> handler = HttpResponse.BodyHandlers.ofString();
-            HttpResponse<String> send = httpClient.send(request, handler);
+        URI uri = URI.create(this.serverURL + "/register");
 
-            if(send.statusCode() != 200) {
-                throw new HandlerRequestException("Запрос не был обработан. Код ответ: " + send.statusCode());
-            }
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(uri)
+                .header("Content-Type", "application/json")
+                .build();
 
-            return send.body();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Ошибка регистрации.");
-        }
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request,
+                HttpResponse.BodyHandlers.ofString()
+        );
+        apiToken = response.body();
     }
 
     public void put(String key, String json) {
+        URI uri = URI.create(this.serverURL + "/save/" + key + "?API_TOKEN=" + apiToken);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .uri(uri)
+                .header("Content-Type", "application/json")
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
         try {
-            URI putUrl = URI.create(uri + "save/" + key + "?API_TOKEN=" + apiToken);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .uri(putUrl)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .build();
-            HttpResponse.BodyHandler<String> handler = HttpResponse.BodyHandlers.ofString();
-            HttpResponse<String> send = httpClient.send(request, handler);
-
-            if(send.statusCode() != 200) {
-                throw new HandlerRequestException("Запрос не был обработан. Код ответ: " + send.statusCode());
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+            );
+            if (response.statusCode() != 200) {
+                System.out.println("Не удалось сохранить данные");
             }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Ошибка регистрации.");
+        }
+        catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
     public String load(String key) {
+        URI uri = URI.create(this.serverURL + "/load/" + key + "?API_TOKEN=" + apiToken);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(uri)
+                .header("Content-Type", "application/json")
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
         try {
-            URI putUrl = URI.create(uri + "load/" + key + "?API_TOKEN=" + apiToken);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET()
-                    .uri(putUrl)
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .build();
-            HttpResponse.BodyHandler<String> handler = HttpResponse.BodyHandlers.ofString();
-            HttpResponse<String> send = httpClient.send(request, handler);
-
-            if(send.statusCode() != 200) {
-                throw new HandlerRequestException("Запрос не был обработан. Код ответ: " + send.statusCode());
-            }
-
-            return send.body();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Ошибка регистрации.");
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+            );
+            return response.body();
+        }
+        catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "Во время запроса произошла ошибка";
         }
     }
 }

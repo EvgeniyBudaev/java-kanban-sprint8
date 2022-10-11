@@ -1,7 +1,6 @@
 import adapters.InstantAdapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import http.HttpTaskServer;
 import manager.HistoryManager;
 import manager.Managers;
 import manager.TaskManager;
@@ -10,11 +9,6 @@ import status.Status;
 import tasks.Epic;
 import tasks.Subtask;
 import tasks.Task;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Instant;
 
 public class Main {

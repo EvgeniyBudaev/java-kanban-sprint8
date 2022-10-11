@@ -53,6 +53,8 @@ public interface TaskManager {
 
     void updateSubtask(Subtask subtask);
 
+    List<Task> getPrioritizedTasks();
+
     void printTasks();
 
     void printEpics();

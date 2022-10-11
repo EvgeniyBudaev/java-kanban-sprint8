@@ -1,4 +1,4 @@
-package client;
+package http;
 
 import java.io.IOException;
 import java.net.URI;
@@ -48,8 +48,7 @@ public class KVTaskClient {
             if (response.statusCode() != 200) {
                 System.out.println("Не удалось сохранить данные");
             }
-        }
-        catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -69,8 +68,7 @@ public class KVTaskClient {
                     HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
             );
             return response.body();
-        }
-        catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return "Во время запроса произошла ошибка";
         }

@@ -1,4 +1,4 @@
-package server.handlers;
+package http.handlers;
 
 import adapters.InstantAdapter;
 import com.google.gson.Gson;

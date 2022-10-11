@@ -1,13 +1,10 @@
-package server;
+package http;
 
 import com.sun.net.httpserver.HttpServer;
-import manager.FileBackedTasksManager;
+import http.handlers.*;
 import manager.HistoryManager;
 import manager.Managers;
 import manager.TaskManager;
-import server.handlers.EpicHandler;
-import server.handlers.SubtaskHandler;
-import server.handlers.TaskHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -25,6 +22,9 @@ public class HttpTaskServer {
         httpServer.createContext("/tasks/task/", new TaskHandler(taskManager));
         httpServer.createContext("/tasks/epic/", new EpicHandler(taskManager));
         httpServer.createContext("/tasks/subtask/", new SubtaskHandler(taskManager));
+        httpServer.createContext("/tasks/subtask/epic/", new SubtaskByEpicHandler(taskManager));
+        httpServer.createContext("/tasks/subtask/epic/", new HistoryHandler(taskManager));
+        httpServer.createContext("/tasks/", new TasksHandler(taskManager));
     }
 
     public void start() {

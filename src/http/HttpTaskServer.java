@@ -10,20 +10,19 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class HttpTaskServer {
-    private final TaskManager taskManager;
     private final HttpServer httpServer;
     private static final int PORT = 8080;
 
     public HttpTaskServer() throws IOException, InterruptedException {
         HistoryManager historyManager = Managers.getDefaultHistory();
-        this.taskManager = Managers.getDefault(historyManager);
+        TaskManager taskManager = Managers.getDefault(historyManager);
         this.httpServer = HttpServer.create();
         httpServer.bind(new InetSocketAddress(PORT), 0);
         httpServer.createContext("/tasks/task/", new TaskHandler(taskManager));
         httpServer.createContext("/tasks/epic/", new EpicHandler(taskManager));
         httpServer.createContext("/tasks/subtask/", new SubtaskHandler(taskManager));
         httpServer.createContext("/tasks/subtask/epic/", new SubtaskByEpicHandler(taskManager));
-        httpServer.createContext("/tasks/subtask/epic/", new HistoryHandler(taskManager));
+        httpServer.createContext("/tasks/history/", new HistoryHandler(taskManager));
         httpServer.createContext("/tasks/", new TasksHandler(taskManager));
     }
 

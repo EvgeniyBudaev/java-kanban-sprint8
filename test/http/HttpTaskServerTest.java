@@ -24,9 +24,12 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpTaskServerTest {
-    public static KVServer kvServer;
-    public static HttpTaskServer taskServer;
-    public static Gson gson = new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).create();
+    private static KVServer kvServer;
+    private static HttpTaskServer taskServer;
+    private static Gson gson = new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).create();
+    private static final String TASK_BASE_URL = "http://localhost:8080/tasks/task/";
+    private static final String EPIC_BASE_URL = "http://localhost:8080/tasks/epic/";
+    private static final String SUBTASK_BASE_URL = "http://localhost:8080/tasks/subtask/";
 
     @BeforeAll
     static void startServer() {
@@ -50,14 +53,14 @@ class HttpTaskServerTest {
     @BeforeEach
     void resetServer() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(url).DELETE().build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
-            url = URI.create("http://localhost:8080/tasks/epic/");
+            url = URI.create(EPIC_BASE_URL);
             request = HttpRequest.newBuilder().uri(url).DELETE().build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
-            url = URI.create("http://localhost:8080/tasks/subtask/");
+            url = URI.create(SUBTASK_BASE_URL);
             request = HttpRequest.newBuilder().uri(url).DELETE().build();
             client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -69,7 +72,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetTasks() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         Task task = new Task("description1", "name1", Status.NEW, Instant.now(), 1);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -92,7 +95,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetEpics() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),2);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -115,7 +118,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetSubtasksTest() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),3);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -125,13 +128,13 @@ class HttpTaskServerTest {
 
         try {
             HttpResponse<String> postResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(201, postResponse.statusCode(), "запись Эпика через POST запрос");
+            assertEquals(201, postResponse.statusCode(), "POST запрос");
             if (postResponse.statusCode() == 201) {
                 int epicId = Integer.parseInt(postResponse.body());
                 epic.setId(epicId);
                 Subtask subtask = new Subtask("description1", "name1", Status.NEW, epic.getId()
                         , Instant.now(),4 );
-                url = URI.create("http://localhost:8080/tasks/subtask/");
+                url = URI.create(SUBTASK_BASE_URL);
 
                 request = HttpRequest.newBuilder()
                         .uri(url)
@@ -153,7 +156,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetTaskById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         Task task = new Task("description1", "name1", Status.NEW, Instant.now(), 5);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -167,7 +170,7 @@ class HttpTaskServerTest {
             if (postResponse.statusCode() == 201) {
                 int id = Integer.parseInt(postResponse.body());
                 task.setId(id);
-                url = URI.create("http://localhost:8080/tasks/task/?id=" + id);
+                url = URI.create(TASK_BASE_URL + "?id=" + id);
                 request = HttpRequest.newBuilder().uri(url).GET().build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(200, response.statusCode());
@@ -182,7 +185,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetEpicById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),6);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -196,7 +199,7 @@ class HttpTaskServerTest {
             if (postResponse.statusCode() == 201) {
                 int id = Integer.parseInt(postResponse.body());
                 epic.setId(id);
-                url = URI.create("http://localhost:8080/tasks/epic/?id=" + id);
+                url = URI.create(EPIC_BASE_URL + "?id=" + id);
                 request = HttpRequest.newBuilder().uri(url).GET().build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(200, response.statusCode());
@@ -211,7 +214,7 @@ class HttpTaskServerTest {
     @Test
     void shouldGetSubtaskById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),7);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -227,7 +230,7 @@ class HttpTaskServerTest {
                 epic.setId(epicId);
                 Subtask subtask = new Subtask("description1", "name1", Status.NEW, epic.getId()
                         , Instant.now(),8 );
-                url = URI.create("http://localhost:8080/tasks/subtask/");
+                url = URI.create(SUBTASK_BASE_URL);
 
                 request = HttpRequest.newBuilder()
                         .uri(url)
@@ -239,7 +242,7 @@ class HttpTaskServerTest {
                 if (postResponse.statusCode() == 201) {
                     int id = Integer.parseInt(postResponse.body());
                     subtask.setId(id);
-                    url = URI.create("http://localhost:8080/tasks/subtask/?id=" + id);
+                    url = URI.create(SUBTASK_BASE_URL + "?id=" + id);
                     request = HttpRequest.newBuilder().uri(url).GET().build();
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(200, response.statusCode());
@@ -255,7 +258,7 @@ class HttpTaskServerTest {
     @Test
     void shouldUpdateTask() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         Task task = new Task("description1", "name1", Status.NEW, Instant.now(), 9);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -274,7 +277,7 @@ class HttpTaskServerTest {
                         .build();
                 client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                url = URI.create("http://localhost:8080/tasks/task/?id=" + id);
+                url = URI.create(TASK_BASE_URL + "?id=" + id);
                 request = HttpRequest.newBuilder().uri(url).GET().build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(200, response.statusCode());
@@ -289,7 +292,7 @@ class HttpTaskServerTest {
     @Test
     void shouldUpdateEpic() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),10);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -308,7 +311,7 @@ class HttpTaskServerTest {
                         .build();
                 client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                url = URI.create("http://localhost:8080/tasks/epic/?id=" + id);
+                url = URI.create(EPIC_BASE_URL + "?id=" + id);
                 request = HttpRequest.newBuilder().uri(url).GET().build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(200, response.statusCode());
@@ -323,7 +326,7 @@ class HttpTaskServerTest {
     @Test
     void shouldUpdateSubtask() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),11);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -339,7 +342,7 @@ class HttpTaskServerTest {
                 epic.setId(epicId);
                 Subtask subtask = new Subtask("description1", "name1", Status.NEW, epic.getId()
                         , Instant.now(),12);
-                url = URI.create("http://localhost:8080/tasks/subtask/");
+                url = URI.create(SUBTASK_BASE_URL);
 
                 request = HttpRequest.newBuilder()
                         .uri(url)
@@ -356,7 +359,7 @@ class HttpTaskServerTest {
                             .build();
                     client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                    url = URI.create("http://localhost:8080/tasks/subtask/?id=" + id);
+                    url = URI.create(SUBTASK_BASE_URL + "?id=" + id);
                     request = HttpRequest.newBuilder().uri(url).GET().build();
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(200, response.statusCode());
@@ -372,7 +375,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteTasks() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         Task task = new Task("description1", "name1", Status.NEW, Instant.now(), 13);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -397,7 +400,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteEpics() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),14);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -423,7 +426,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteSubtasks() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),15);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -439,7 +442,7 @@ class HttpTaskServerTest {
                 epic.setId(epicId);
                 Subtask subtask = new Subtask("description1", "name1", Status.NEW, epic.getId()
                         , Instant.now(),16);
-                url = URI.create("http://localhost:8080/tasks/subtask/");
+                url = URI.create(SUBTASK_BASE_URL);
 
                 request = HttpRequest.newBuilder()
                         .uri(url)
@@ -464,7 +467,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteTaskById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/task/");
+        URI url = URI.create(TASK_BASE_URL);
         Task task = new Task("description1", "name1", Status.NEW, Instant.now(), 17);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -475,7 +478,7 @@ class HttpTaskServerTest {
         try {
             HttpResponse<String> postResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
             int id = Integer.parseInt(postResponse.body());
-            url = URI.create("http://localhost:8080/tasks/task/?id=" + id);
+            url = URI.create(TASK_BASE_URL + "?id=" + id);
             request = HttpRequest.newBuilder().uri(url).DELETE().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(204, response.statusCode());
@@ -490,7 +493,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteEpicById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),18);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -503,7 +506,7 @@ class HttpTaskServerTest {
             assertEquals(201, postResponse.statusCode(), "POST запрос");
             if (postResponse.statusCode() == 201) {
                 int id = Integer.parseInt(postResponse.body());
-                url = URI.create("http://localhost:8080/tasks/epic/?id=" + id);
+                url = URI.create(EPIC_BASE_URL + "?id=" + id);
                 request = HttpRequest.newBuilder().uri(url).DELETE().build();
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 assertEquals(204, response.statusCode());
@@ -520,7 +523,7 @@ class HttpTaskServerTest {
     @Test
     void shouldDeleteSubtaskById() {
         HttpClient client = HttpClient.newHttpClient();
-        URI url = URI.create("http://localhost:8080/tasks/epic/");
+        URI url = URI.create(EPIC_BASE_URL);
         Epic epic = new Epic("description1", "name1", Status.NEW, Instant.now(),15);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -534,7 +537,7 @@ class HttpTaskServerTest {
             if (postResponse.statusCode() == 201) {
                 Subtask subtask = new Subtask("description1", "name1", Status.NEW, epic.getId()
                         , Instant.now(),19);
-                url = URI.create("http://localhost:8080/tasks/subtask/");
+                url = URI.create(SUBTASK_BASE_URL);
 
                 request = HttpRequest.newBuilder()
                         .uri(url)
@@ -546,7 +549,7 @@ class HttpTaskServerTest {
                 if (postResponse.statusCode() == 201) {
                     int id = Integer.parseInt(postResponse.body());
                     subtask.setId(id);
-                    url = URI.create("http://localhost:8080/tasks/subtask/?id=" + id);
+                    url = URI.create(SUBTASK_BASE_URL + "?id=" + id);
                     request = HttpRequest.newBuilder().uri(url).DELETE().build();
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(204, response.statusCode());
